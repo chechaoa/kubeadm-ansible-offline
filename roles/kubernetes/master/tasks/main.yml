@@ -1,0 +1,60 @@
+---
+
+- name: Reset Kubernetes component
+  shell: "kubeadm reset"
+  register: reset_cluster
+
+- name: Init Kubernetes cluster
+  when: reset_cluster|succeeded
+  shell: |
+    kubeadm init --service-cidr {{ service_cidr }} \
+                 --kubernetes-version {{ kube_version }} \
+                 --pod-network-cidr {{ pod_network_cidr }} \
+                 --token {{ token }} \
+                 {{ kubeadm_opts }} \
+                 {{ init_opts }}
+  register: init_cluster
+
+- name: Debug kubernetes init output
+  debug: msg={{ init_cluster }}
+#  failed_when: init_cluster.stdout.find('kubeadm join --token') == -1
+
+#- name: Get join script
+#  shell: echo "{{ init_cluster.stdout }}" | grep 'kubeadm join --token'
+#  register: join_script
+
+#- name: Save join script
+#  copy: content={{ join_script.stdout }} dest="{{ inventory_dir }}/join_script"
+
+#- name: Chmod join script
+#  file:
+#    path: "{{ inventory_dir }}/join_script"
+#    mode: 0444
+
+- name: Create Kubernetes config directory
+  become: false
+  file: path="~/.kube/" state=directory
+
+- name: Create kubeconfig
+  shell: cp "{{ kube_dir }}/admin.conf" "$HOME/.kube/config"
+
+- name: Chown .kube/config
+  shell: chown `id -u`:`id -g` "$HOME/.kube/config"
+
+
+- name: Waiting apiserver to start
+  shell: kubectl get nodes
+  register: kube_bootstrap
+  until: kube_bootstrap.rc == 0
+  retries: "20"
+  delay: 6
+
+- name: Enable and restart kubelet engine
+  systemd:
+    name: kubelet
+    daemon_reload: yes
+    state: restarted
+    enabled: yes
+
+- name: Make master schedulable
+  shell: kubectl taint nodes --all node-role.kubernetes.io/master-

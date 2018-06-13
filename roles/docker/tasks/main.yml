@@ -1,0 +1,14 @@
+---
+
+- name: Install Docker container engine
+  include_tasks: pkg.yml
+
+- name: Enable and restart Docker engine
+  systemd:
+    name: docker
+    daemon_reload: yes
+    state: restarted
+    enabled: yes
+  register: started_docker
+
+

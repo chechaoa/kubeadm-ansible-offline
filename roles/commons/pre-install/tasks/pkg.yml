@@ -1,0 +1,99 @@
+---
+
+# Centos based 
+#- name: Add Kubernetes yum repository
+#  when: ansible_os_family == "CentOS"
+#  yum_repository:
+#    name: Kubernetes
+#    description: Kubernetes Repository
+#    file: kubernetes
+#    baseurl: http://{{ groups['master'][0] }}/repos/
+#    enabled: yes
+#    gpgcheck: no
+#  with_items: "{{ groups['master'] }}"
+
+#- name: Add Kubernetes APT GPG key
+#  when: ansible_os_family == "Debian"
+#  apt_key:
+#    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+#    state: present
+
+#- name: Add Kubernetes APT repository
+#  when: ansible_os_family == "Debian"
+#  apt_repository:
+#    repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+#    state: present
+#    filename: 'kubernetes'
+
+#- name: Install kubernetes packages (Debian/Ubuntu)
+#  when: ansible_os_family == "Debian"
+#  apt:
+#    name: "{{ item }}"
+#    update_cache: yes
+#  with_items: "{{ pkgs }}"
+
+
+- name: Install kubernetes packages (CentOS)
+  when:  ansible_distribution  == "CentOS"
+  yum: 
+    name: "{{ item }}" 
+    state: present
+    disable_gpg_check: yes
+    update_cache: yes
+  with_items: "{{ pkgs }}"
+  register: install_k8s_output
+
+- debug: msg={{ install_k8s_output }}
+
+
+#- name: Install kubernetes packages (Debian/Ubuntu)
+#  when: ansible_os_family == "Debian"
+#  apt:
+#    name: "{{ item }}"
+#    update_cache: yes
+#  with_items: "{{ pkgs }}"
+
+#- set_fact:
+#    image_file: "{{ tmp_caicloud }}/kubeadm-images.tar.gz"
+#    kube_debs:
+#      - kubelet_1.8.6-1_amd64.deb
+#      - kubernetes-cni_0.5.1-2_amd64.deb
+#      - kubeadm_1.8.6-1_amd64.deb
+
+#- name: Copy deb packages
+#  when:  ansible_distribution  == "kylin"
+#  copy: src={{ item }} dest={{ deb_package_dir }}
+#  with_items: "{{ kube_debs }}"
+
+#- name: Copy kubectl
+#  when:  ansible_distribution  == "kylin"
+#  copy: src=kubectl dest=/usr/bin/kubectl
+
+#- name: Clear config files
+#  when:  ansible_distribution  == "kylin"
+#  shell: dpkg --purge {{ item }}
+#  with_items:
+#    - kubelet
+#    - kubeadm
+#    - kubernetes-cni
+
+#- name: Install kube packages
+#  when:  ansible_distribution  == "kylin"
+#  shell: dpkg -i {{ deb_package_dir }}/{{ item }}
+#  with_items: "{{ kube_debs }}"
+
+
+- name: Create directory
+  file: path=/tmp/caicloud  state=directory
+
+
+- set_fact:
+    image_file: "{{ tmp_caicloud }}/kubeadm-images.tar.gz"
+
+
+- name: Copy images tarball
+  copy: src=kubeadm-images.tar.gz dest={{ image_file }}
+
+
+- name: Load images
+  shell: docker load -i {{ image_file }}

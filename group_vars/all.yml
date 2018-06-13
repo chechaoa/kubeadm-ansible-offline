@@ -1,0 +1,31 @@
+# Kubernetes
+kube_version: v1.8.6
+
+
+token: b0f7b8.8d1767876297d85c
+# token ttl for example: 1s, 2m, 3h. 0 means 'never expires'. default 24h0m0s.
+token_ttl: 0
+
+# 1.8.x feature: --feature-gates SelfHosting=true
+init_opts: ""
+
+# Any other additional opts you want to add..
+kubeadm_opts: ""
+
+service_subnet: 10.10.0
+service_cidr: "{{ service_subnet }}.0/16"
+
+
+# Network implementation('flannel', 'calico')
+pod_network_cidr: "10.244.0.0/16"
+
+enable_dashboard: yes
+
+tmp_caicloud: "/tmp/caicloud"
+rpm_package_dir: "{{ tmp_caicloud }}/rpm_packages"
+systemd_dir: /lib/systemd/system
+system_env_dir: /etc/sysconfig
+kubeadmin_config: /etc/kubernetes/admin.conf
+kube_dir: "/etc/kubernetes"
+kube_addons_dir: /etc/kubernetes/addons
+
